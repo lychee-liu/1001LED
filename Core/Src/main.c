@@ -43,6 +43,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+//branch test
 uint32_t ticks;
 uint32_t prev_ticks;
 uint8_t flag=0;
