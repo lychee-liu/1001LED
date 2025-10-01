@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -89,8 +90,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_Base_Start(&htim1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -100,26 +102,35 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    ticks=HAL_GetTick();
-    if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin))
+    //   ticks=HAL_GetTick();
+    //   if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin))
+    //   {
+    //     HAL_Delay(5);
+    //     if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin))
+    //     {
+    //       flag=!flag;
+    //     }
+    //   }
+    //   while ((ticks-prev_ticks)>999)
+    //   {
+    //     prev_ticks=ticks;
+    //     if (flag)
+    //     {
+    //       HAL_GPIO_TogglePin(LEDR_GPIO_Port, LEDR_Pin);
+    //     }
+    //     else
+    //     {
+    //       HAL_GPIO_TogglePin(LEDG_GPIO_Port, LEDG_Pin);
+    //     }
+    //   }
+    // }
+    if (__HAL_TIM_GetCounter(&htim1)>__HAL_TIM_GET_AUTORELOAD(&htim1)/2)
     {
-      HAL_Delay(5);
-      if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin))
-      {
-        flag=!flag;
-      }
+      HAL_GPIO_WritePin(LEDR_GPIO_Port,LEDR_Pin,GPIO_PIN_SET);
     }
-    while ((ticks-prev_ticks)>999)
+    else
     {
-      prev_ticks=ticks;
-      if (flag)
-      {
-        HAL_GPIO_TogglePin(LEDR_GPIO_Port, LEDR_Pin);
-      }
-      else
-      {
-        HAL_GPIO_TogglePin(LEDG_GPIO_Port, LEDG_Pin);
-      }
+      HAL_GPIO_WritePin(LEDR_GPIO_Port,LEDR_Pin,GPIO_PIN_RESET);
     }
   }
   /* USER CODE END 3 */
