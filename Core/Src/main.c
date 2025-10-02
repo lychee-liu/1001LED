@@ -18,12 +18,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "iwdg.h"
 #include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,8 +92,10 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_TIM1_Init();
+  MX_IWDG_Init();
+  MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start(&htim1);
+  HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -102,35 +105,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    //   ticks=HAL_GetTick();
-    //   if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin))
-    //   {
-    //     HAL_Delay(5);
-    //     if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin))
-    //     {
-    //       flag=!flag;
-    //     }
-    //   }
-    //   while ((ticks-prev_ticks)>999)
-    //   {
-    //     prev_ticks=ticks;
-    //     if (flag)
-    //     {
-    //       HAL_GPIO_TogglePin(LEDR_GPIO_Port, LEDR_Pin);
-    //     }
-    //     else
-    //     {
-    //       HAL_GPIO_TogglePin(LEDG_GPIO_Port, LEDG_Pin);
-    //     }
-    //   }
-    // }
-    if (__HAL_TIM_GetCounter(&htim1)>__HAL_TIM_GET_AUTORELOAD(&htim1)/2)
+    uint32_t arr_value = __HAL_TIM_GET_AUTORELOAD(&htim1)+1; //配置的是1000
+    uint32_t brightness = arr_value*sinf(2*HAL_GetTick()/1000.f)-1;
+    __HAL_TIM_SetCompare(&htim1,TIM_CHANNEL_2,brightness);
+
+    if (HAL_GPIO_ReadPin(KEY_GPIO_Port,KEY_Pin)==GPIO_PIN_SET)//按下白色按钮
     {
-      HAL_GPIO_WritePin(LEDR_GPIO_Port,LEDR_Pin,GPIO_PIN_SET);
-    }
-    else
-    {
-      HAL_GPIO_WritePin(LEDR_GPIO_Port,LEDR_Pin,GPIO_PIN_RESET);
+      HAL_IWDG_Refresh(&hiwdg);
     }
   }
   /* USER CODE END 3 */
@@ -153,8 +134,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 6;
