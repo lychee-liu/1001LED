@@ -26,15 +26,25 @@
 extern uint8_t rx_msg[32];
 extern uint8_t tx_msg[32];
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+// void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+// {
+//     if (huart == &huart7)
+//     {
+//         for (int i=0;i<32;++i)
+//         {
+//             tx_msg[i] = rx_msg[i];
+//         }
+//         HAL_UART_Transmit(&huart7, tx_msg, 32, 1000);
+//     }
+//     HAL_UART_Receive_IT(&huart7,rx_msg,32);
+// }
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
     if (huart == &huart7)
     {
-        for (int i=0;i<32;++i)
-        {
-            tx_msg[i] = rx_msg[i];
-        }
-        HAL_UART_Transmit(&huart7, tx_msg, 32, 1000);
+        memcpy(tx_msg, rx_msg, Size);
+        HAL_UART_Transmit_DMA(&huart7, tx_msg, Size);
+        HAL_UARTEx_ReceiveToIdle_DMA(&huart7, rx_msg, 32);
     }
-    HAL_UART_Receive_IT(&huart7,rx_msg,32);
 }
