@@ -45,10 +45,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-//branch test
 uint32_t ticks;
 uint32_t prev_ticks;
 uint8_t flag=0;
+uint8_t rx_msg[4];
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -97,6 +98,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_2);
   HAL_TIM_Base_Start_IT(&htim1);
+
+  HAL_UART_Receive_IT(&huart7,rx_msg,1);
 
   uint8_t tx_msg[] = "RoboMaster";
   /* USER CODE END 2 */
