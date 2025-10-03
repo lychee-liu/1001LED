@@ -4,6 +4,6 @@
 
 #ifndef INC_1001LED_ALGORITHM_H
 #define INC_1001LED_ALGORITHM_H
-float linearMapping(int in, int in_min, int in_max, float out_min, float out_max);
-
+#include <stdint.h>
+float linearMapping(int16_t in, int16_t in_min, int16_t in_max, float out_min, float out_max);
 #endif //INC_1001LED_ALGORITHM_H
