@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "can.h"
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
@@ -52,6 +53,29 @@ uint8_t flag=0;
 uint8_t rx_msg[32];
 uint8_t tx_msg[32];
 
+CAN_RxHeaderTypeDef rx_header;
+CAN_TxHeaderTypeDef tx_header={
+  .StdId=0x200,
+  .ExtId=0,
+  .IDE=CAN_ID_STD,
+  .RTR=CAN_RTR_DATA,
+  .DLC=8,
+  .TransmitGlobalTime = DISABLE
+};
+uint8_t rx_data[8];
+uint8_t tx_data[8]={0x00,0xC0,0x00,0x00,0x00,0x00,0x00,0x00};
+
+CAN_FilterTypeDef filter_config={
+  .FilterIdHigh = 0x0000,
+  .FilterIdLow = 0x0000,
+  .FilterMaskIdHigh = 0x0000,
+  .FilterMaskIdLow = 0x0000,
+  .FilterFIFOAssignment = CAN_FILTER_FIFO0,
+  .FilterBank = 0,
+  .FilterMode = CAN_FILTERMODE_IDMASK,
+  .FilterScale = CAN_FILTERSCALE_32BIT,
+  .FilterActivation = ENABLE
+};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,9 +122,16 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM12_Init();
   MX_UART7_Init();
+  MX_CAN1_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   HAL_UARTEx_ReceiveToIdle_DMA(&huart7, rx_msg, 32);
 
+  HAL_CAN_ConfigFilter(&hcan1,&filter_config);
+  HAL_CAN_Start(&hcan1);
+  HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);//激活CAN接收中断
+
+  HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */

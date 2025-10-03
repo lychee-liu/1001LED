@@ -2,6 +2,8 @@
 #include "tim.h"
 #include "math.h"
 #include "usart.h"
+#include "can.h"
+#include "motor.h"
 
 // void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 // {
@@ -39,12 +41,38 @@ extern uint8_t tx_msg[32];
 //     HAL_UART_Receive_IT(&huart7,rx_msg,32);
 // }
 
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+// void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+// {
+//     if (huart == &huart7)
+//     {
+//         memcpy(tx_msg, rx_msg, Size);
+//         HAL_UART_Transmit_DMA(&huart7, tx_msg, Size);
+//         HAL_UARTEx_ReceiveToIdle_DMA(&huart7, rx_msg, 32);
+//     }
+// }
+extern uint8_t rx_data[8];
+extern CAN_RxHeaderTypeDef rx_header;
+extern uint8_t tx_data[8];
+extern CAN_TxHeaderTypeDef tx_header;
+extern M3508_Motor Motor;
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    if (huart == &huart7)
+    if (hcan->Instance==CAN1)
     {
-        memcpy(tx_msg, rx_msg, Size);
-        HAL_UART_Transmit_DMA(&huart7, tx_msg, Size);
-        HAL_UARTEx_ReceiveToIdle_DMA(&huart7, rx_msg, 32);
+        HAL_CAN_GetRxMessage(&hcan1,CAN_RX_FIFO0, &rx_header, rx_data);
+        if (rx_header.StdId == 0x201)
+        {
+            Motor.canRxMsgCallback(rx_data);
+        }
+    }
+}
+
+uint32_t can_tx_mail_box_;
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim == &htim6)
+    {
+        HAL_CAN_AddTxMessage(&hcan1, &tx_header, tx_data, &can_tx_mail_box_);
     }
 }
