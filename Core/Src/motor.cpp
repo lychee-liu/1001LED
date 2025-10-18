@@ -3,6 +3,10 @@
 //#include "algorithm.h"
 
 float linearMapping(int16_t in, int16_t in_min, int16_t in_max, float out_min, float out_max) {
+    if (in <= in_min)
+        return out_min;
+    if (in >= in_max)
+        return out_max;
     float result = float(out_min + (out_max - out_min) * (in - in_min) / (in_max - in_min));
     return result;
 }
@@ -23,6 +27,43 @@ void M3508_Motor::canRxMsgCallback(const uint8_t rx_data[8]) {
 
     delta_angle_ = delta_ecd_angle_ / ratio_;
     angle_ += delta_angle_;
+
+    fdb_angle_ = angle_;
+    fdb_speed_ = rotate_speed_;
 }
 
-M3508_Motor Motor(3591.0f / 187.0f);
+void M3508_Motor::SetIntensity(float intensity) {
+    output_intensity_ = intensity;
+}
+
+void M3508_Motor::SetSpeed(float target_speed, float feedforward_intensity) {
+    target_speed_ = target_speed;
+    feedforward_intensity_ = feedforward_intensity;
+}
+
+void M3508_Motor::SetPosition(float target_position, float feedforward_speed, float feedforward_intensity) {
+    target_angle_ = target_position;
+    feedforward_speed_ = feedforward_speed;
+    feedforward_intensity_ = feedforward_intensity;
+}
+
+extern uint8_t tx_data[8];
+
+void M3508_Motor::handle() {
+    switch (control_method_) {
+        case TORQUE:
+            break;
+        case SPEED:
+            output_intensity_ = spid_.calc(target_speed_, fdb_speed_) + feedforward_intensity_;
+            break;
+        case POSITION_SPEED:
+            target_speed_ = ppid_.calc(target_angle_, fdb_angle_) + feedforward_speed_;
+            output_intensity_ = spid_.calc(target_speed_, fdb_speed_) + feedforward_intensity_;
+            break;
+    }
+    int16_t intensity = (int16_t)output_intensity_;
+    tx_data[0] = (uint8_t)((intensity >> 8) & 0xFF);
+    tx_data[1] = (uint8_t)(intensity & 0xFF);
+}
+
+M3508_Motor Motor(3591.0f / 187.0f, PID(), PID(), M3508_Motor::SPEED);
