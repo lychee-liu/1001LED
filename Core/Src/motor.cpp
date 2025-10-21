@@ -1,5 +1,6 @@
 #include "main.h"
 #include "motor.h"
+#include <cmath>
 //#include "algorithm.h"
 
 float linearMapping(int16_t in, int16_t in_min, int16_t in_max, float out_min, float out_max) {
@@ -34,20 +35,24 @@ void M3508_Motor::canRxMsgCallback(const uint8_t rx_data[8]) {
 
 void M3508_Motor::SetIntensity(float intensity) {
     output_intensity_ = intensity;
+    control_method_ = TORQUE;
 }
 
 void M3508_Motor::SetSpeed(float target_speed, float feedforward_intensity) {
     target_speed_ = target_speed;
     feedforward_intensity_ = feedforward_intensity;
+    control_method_ = SPEED;
 }
 
 void M3508_Motor::SetPosition(float target_position, float feedforward_speed, float feedforward_intensity) {
     target_angle_ = target_position;
     feedforward_speed_ = feedforward_speed;
     feedforward_intensity_ = feedforward_intensity;
+    control_method_ = POSITION_SPEED;
 }
 
 extern uint8_t tx_data[8];
+#define MAX_INTENSITY 6000
 
 void M3508_Motor::handle() {
     switch (control_method_) {
@@ -62,8 +67,18 @@ void M3508_Motor::handle() {
             break;
     }
     int16_t intensity = (int16_t)output_intensity_;
+    if (intensity > MAX_INTENSITY) {
+        intensity = MAX_INTENSITY;
+    } else if (intensity < -MAX_INTENSITY) {
+        intensity = -MAX_INTENSITY;
+    }
     tx_data[0] = (uint8_t)((intensity >> 8) & 0xFF);
     tx_data[1] = (uint8_t)(intensity & 0xFF);
+}
+
+float M3508_Motor::FeedforwardIntensityCalc(float current_angle) {
+    int16_t current = 0.5 * 9.8 * 0.05524 * sinf(current_angle);
+    return linearMapping(current, -20, 20, -16384, 16384);
 }
 
 M3508_Motor Motor(3591.0f / 187.0f, PID(), PID(), M3508_Motor::SPEED);

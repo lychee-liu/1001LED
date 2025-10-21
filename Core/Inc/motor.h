@@ -52,6 +52,7 @@ public:
     void SetSpeed(float target_speed, float feedforward_intensity = 0);
     void SetIntensity(float intensity);
     void handle(void);
+    float FeedforwardIntensityCalc(float current_angle);
 
 private:
     const float ratio_;
@@ -65,10 +66,12 @@ private:
     float current_ = 0.f; //
     float temp_ = 0.f; //
 
-    PID spid_, ppid_;
+    PID spid_ = PID(1.0f, 1.0f, 0.0f, 10.0f, 10.0f, 1), ppid_ = PID(1.0f, 1.0f, 0.0f, 10.0f, 10.0f, 1);
     float target_angle_ = 0.f, fdb_angle_ = 0.f;
     float target_speed_ = 0.f, fdb_speed_ = 0.f, feedforward_speed_ = 0.f;
     float feedforward_intensity_ = 0.f, output_intensity_ = 0.f;
     ControlMethod control_method_ = TORQUE;
 };
+
+
 #endif //INC_1001LED_MOTOR_H
