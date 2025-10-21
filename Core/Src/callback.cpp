@@ -53,26 +53,27 @@ extern uint8_t tx_msg[32];
 extern uint8_t rx_data[8];
 extern CAN_RxHeaderTypeDef rx_header;
 extern uint8_t tx_data[8];
+extern uint8_t stop_data[8];
 extern CAN_TxHeaderTypeDef tx_header;
 extern M3508_Motor Motor;
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-    if (hcan->Instance==CAN1)
-    {
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan) {
+    if (hcan->Instance == CAN1) {
         HAL_CAN_GetRxMessage(&hcan1,CAN_RX_FIFO0, &rx_header, rx_data);
-        if (rx_header.StdId == 0x201)
-        {
+        if (rx_header.StdId == 0x201) {
             Motor.canRxMsgCallback(rx_data);
         }
     }
 }
 
 uint32_t can_tx_mail_box_;
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-    if (htim == &htim6)
-    {
-        HAL_CAN_AddTxMessage(&hcan1, &tx_header, tx_data, &can_tx_mail_box_);
+extern int stop_flag;
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+    if (htim == &htim6) {
+        if (stop_flag)
+            HAL_CAN_AddTxMessage(&hcan1, &tx_header, stop_data, &can_tx_mail_box_);
+        else
+            HAL_CAN_AddTxMessage(&hcan1, &tx_header, tx_data, &can_tx_mail_box_);
     }
 }
