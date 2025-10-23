@@ -51,20 +51,25 @@ void M3508_Motor::SetPosition(float target_position, float feedforward_speed, fl
     control_method_ = POSITION_SPEED;
 }
 
+extern int stop_flag;
 extern uint8_t tx_data[8];
 #define MAX_INTENSITY 6000
 
 void M3508_Motor::handle() {
-    switch (control_method_) {
-        case TORQUE:
-            break;
-        case SPEED:
-            output_intensity_ = spid_.calc(target_speed_, fdb_speed_) + feedforward_intensity_;
-            break;
-        case POSITION_SPEED:
-            target_speed_ = ppid_.calc(target_angle_, fdb_angle_) + feedforward_speed_;
-            output_intensity_ = spid_.calc(target_speed_, fdb_speed_) + feedforward_intensity_;
-            break;
+    if (stop_flag) {
+        output_intensity_ = 0;
+    } else {
+        switch (control_method_) {
+            case TORQUE:
+                break;
+            case SPEED:
+                output_intensity_ = spid_.calc(target_speed_, fdb_speed_) + feedforward_intensity_;
+                break;
+            case POSITION_SPEED:
+                target_speed_ = ppid_.calc(target_angle_, fdb_angle_) + feedforward_speed_;
+                output_intensity_ = spid_.calc(target_speed_, fdb_speed_) + feedforward_intensity_;
+                break;
+        }
     }
     int16_t intensity = (int16_t)output_intensity_;
     if (intensity > MAX_INTENSITY) {
@@ -77,8 +82,8 @@ void M3508_Motor::handle() {
 }
 
 float M3508_Motor::FeedforwardIntensityCalc(float current_angle) {
-    int16_t current = 0.5 * 9.8 * 0.05524 * sinf(current_angle);
-    return linearMapping(current, -20, 20, -16384, 16384);
+    float current = 0.5 * 9.8 * 0.05524 * sinf(current_angle * 3.14 / 180.0)/0.3f*16384.0/20.0;
+    return current;
 }
 
 M3508_Motor Motor(3591.0f / 187.0f, PID(), PID(), M3508_Motor::SPEED);
