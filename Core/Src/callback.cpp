@@ -71,7 +71,6 @@ extern int stop_flag;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
     if (htim == &htim6) {
-        Motor.SetIntensity(Motor.FeedforwardIntensityCalc(Motor.GetAngle()));
         Motor.handle();
 
         if (stop_flag)
