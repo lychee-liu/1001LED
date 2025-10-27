@@ -60,7 +60,7 @@ extern M3508_Motor Motor;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan) {
     if (hcan->Instance == CAN1) {
         HAL_CAN_GetRxMessage(&hcan1,CAN_RX_FIFO0, &rx_header, rx_data);
-        if (rx_header.StdId == 0x201) {
+        if (rx_header.StdId == 0x202) {
             Motor.canRxMsgCallback(rx_data);
         }
     }
@@ -71,8 +71,8 @@ extern int stop_flag;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
     if (htim == &htim6) {
+        Motor.SetIntensity(Motor.FeedforwardIntensityCalc(Motor.GetAngle()));
         Motor.handle();
-
         if (stop_flag)
             HAL_CAN_AddTxMessage(&hcan1, &tx_header, stop_data, &can_tx_mail_box_);
         else
