@@ -62,6 +62,7 @@ private:
     float ecd_angle_ = 0.f; //
     float last_ecd_angle_ = 0.f; //
     float delta_ecd_angle_ = 0.f; //
+    float last_rotate_speed_ = 0.f; //
     float rotate_speed_ = 0.f; //
     float current_ = 0.f; //
     float temp_ = 0.f; //

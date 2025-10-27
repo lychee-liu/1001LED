@@ -14,6 +14,7 @@ float linearMapping(int16_t in, int16_t in_min, int16_t in_max, float out_min, f
 
 void M3508_Motor::canRxMsgCallback(const uint8_t rx_data[8]) {
     last_ecd_angle_ = ecd_angle_;
+    last_rotate_speed_ = rotate_speed_;
     int16_t ecd_angle = ((int16_t)rx_data[0] << 8) | (int16_t)rx_data[1];
     ecd_angle_ = linearMapping(ecd_angle, 0, 8191, 0.0, 360.0);
     delta_ecd_angle_ = float(ecd_angle_ - last_ecd_angle_);
@@ -21,7 +22,7 @@ void M3508_Motor::canRxMsgCallback(const uint8_t rx_data[8]) {
         delta_ecd_angle_ -= 360;
     else if (delta_ecd_angle_ < -180)
         delta_ecd_angle_ += 360;
-    rotate_speed_ = static_cast<float>(((int16_t)rx_data[2] << 8) | (int16_t)rx_data[3]);
+    rotate_speed_ = static_cast<float>((int16_t)(rx_data[2] << 8 | rx_data[3]));
     int16_t current = ((int16_t)rx_data[4] << 8) | (int16_t)rx_data[5];
     current_ = linearMapping(current, -16384, 16384, -20.0, 20.0);
     temp_ = rx_data[6];
@@ -30,7 +31,12 @@ void M3508_Motor::canRxMsgCallback(const uint8_t rx_data[8]) {
     angle_ += delta_angle_;
 
     fdb_angle_ = angle_;
-    fdb_speed_ = rotate_speed_;
+    fdb_speed_ = rotate_speed_ * 0.1 + last_rotate_speed_ * 0.9;
+    if (fdb_speed_ > 200)
+        fdb_speed_ = 200;
+    else
+        if (fdb_speed_ < -200)
+            fdb_speed_ = -200;
 }
 
 void M3508_Motor::SetIntensity(float intensity) {
@@ -53,7 +59,7 @@ void M3508_Motor::SetPosition(float target_position, float feedforward_speed, fl
 
 extern int stop_flag;
 extern uint8_t tx_data[8];
-int16_t MAX_INTENSITY = 0x0FFF;
+int16_t MAX_INTENSITY = 16384;
 
 void M3508_Motor::handle() {
     if (stop_flag) {
@@ -68,9 +74,9 @@ void M3508_Motor::handle() {
                 break;
             case POSITION_SPEED:
                 FeedforwardIntensityCalc(angle_);
-                // target_speed_ = ppid_.calc(target_angle_, fdb_angle_) + feedforward_speed_;
-                // output_intensity_ = spid_.calc(target_speed_, fdb_speed_) + feedforward_intensity_;
-                output_intensity_ = ppid_.calc(target_angle_, fdb_angle_) + feedforward_intensity_;
+                target_speed_ = ppid_.calc(target_angle_, fdb_angle_) + feedforward_speed_;
+                output_intensity_ = spid_.calc(target_speed_, fdb_speed_) + feedforward_intensity_;
+                //output_intensity_ = ppid_.calc(target_angle_, fdb_angle_) + feedforward_intensity_;
                 break;
         }
     }
@@ -90,6 +96,6 @@ float M3508_Motor::FeedforwardIntensityCalc(float current_angle) {
 }
 
 M3508_Motor Motor(3591.0f / 187.0f,
-                  PID(0, 0, 0, 0, 0, 0),
-                  PID(5, 0, 0, 0, 500, 0.1),
+                  PID(0.006, 0, 0, 0, 1.5, 0.2),
+                  PID(10, 0, 5, 0, 400, 0.05),
                   M3508_Motor::POSITION_SPEED);

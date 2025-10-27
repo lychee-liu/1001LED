@@ -71,7 +71,6 @@ extern int stop_flag;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
     if (htim == &htim6) {
-        Motor.SetIntensity(Motor.FeedforwardIntensityCalc(Motor.GetAngle()));
         Motor.handle();
         if (stop_flag)
             HAL_CAN_AddTxMessage(&hcan1, &tx_header, stop_data, &can_tx_mail_box_);
